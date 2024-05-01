@@ -1,72 +1,72 @@
-% ¼ÓÔØÍÓÂİÒÇÊı¾İ
-% Ë³Ğòax,ay,az,gx,gy,gz
-% accµÄµ¥Î»ÊÇg
-% gyroµÄµ¥Î»ÊÇdeg/s
+% åŠ è½½é™€èºä»ªæ•°æ®
+% é¡ºåºax,ay,az,gx,gy,gz
+% accçš„å•ä½æ˜¯g
+% gyroçš„å•ä½æ˜¯deg/s
 data = load('D:/Serial Debug 2023-12-25 215322.csv');
 
-% »ñÈ¡Êı¾İ¸öÊı Ò»×éÊı¾İ ax ay az gx gy gz  
+% è·å–æ•°æ®ä¸ªæ•° ä¸€ç»„æ•°æ® ax ay az gx gy gz  
 numRows = size(data, 1); 
 
-% µü´ú´ÎÊı
+% è¿­ä»£æ¬¡æ•°
 epoch = 2;
 
-% Å·À­½Ç
+% æ¬§æ‹‰è§’
 global eul_deg;
 eul_deg = zeros(numRows*epoch,3);
 
-% ¼ÓËÙ¶È¼ÆÅ·À­½Ç
+% åŠ é€Ÿåº¦è®¡æ¬§æ‹‰è§’
 global eul_acc_deg;
 eul_acc_deg = zeros(numRows*epoch,2);
 
-% ¸üĞÂÖÜÆÚ
+% æ›´æ–°å‘¨æœŸ
 global period_T;
 period_T = 0.001;
 
-% ¸üĞÂÖÜÆÚµÄÒ»°ë
+% æ›´æ–°å‘¨æœŸçš„ä¸€åŠ
 global Half_T;
 Half_T = period_T / 2;
 
- % »úÌåËÄÔªÊı
+ % æœºä½“å››å…ƒæ•°
 global q; 
 q = transpose([1 0 0 0]);
 
-% ¹Û²âÏòÁ¿
+% è§‚æµ‹å‘é‡
 global Z;
 
-% ×´Ì¬×ªÒÆ¾ØÕó
+% çŠ¶æ€è½¬ç§»çŸ©é˜µ
 global A;
 
-% ¹Û²â¾ØÕó
+% è§‚æµ‹çŸ©é˜µ
 global H;
 
-% Îó²îĞ­·½²î¾ØÕó
+% è¯¯å·®åæ–¹å·®çŸ©é˜µ
 global P;
 P_value = 100000;
 P_diag = [P_value P_value P_value P_value];
 P = diag(P_diag);
 
-% ¹ı³ÌÔëÉùĞ­·½²î¾ØÕó
+% è¿‡ç¨‹å™ªå£°åæ–¹å·®çŸ©é˜µ
 global Q;
 Q_value = 0.01;
 Q_diag = [Q_value Q_value Q_value Q_value];
 Q = diag(Q_diag);
 
-% ²âÁ¿ÔëÉùĞ­·½²î¾ØÕó
+% æµ‹é‡å™ªå£°åæ–¹å·®çŸ©é˜µ
 global R;
 R_value = 1000000;
 R_diag = [R_value R_value R_value];
 R = diag(R_diag);
 
-% ¿¨¶ûÂüÔöÒæ
+% å¡å°”æ›¼å¢ç›Š
 global K;
 
 global deg_num;
 deg_num = 1;
 for j = 1:epoch
-    % Ê¹ÓÃforÑ­»·±éÀúÃ¿Ò»ĞĞ  
+    % ä½¿ç”¨forå¾ªç¯éå†æ¯ä¸€è¡Œ  
     for i = 1:numRows  
-        % ·ÃÎÊµ±Ç°ĞĞµÄËùÓĞÔªËØ  
-        row = data(i, :); % Ê¹ÓÃÃ°ºÅÀ´Ñ¡ÔñËùÓĞÁĞ  
+        % è®¿é—®å½“å‰è¡Œçš„æ‰€æœ‰å…ƒç´   
+        row = data(i, :); % ä½¿ç”¨å†’å·æ¥é€‰æ‹©æ‰€æœ‰åˆ—  
 
         ax = row(1) * 9.8;
         ay = row(2) * 9.8;
@@ -75,31 +75,33 @@ for j = 1:epoch
         gy = row(5)/ 57.3;
         gz = row(6)/ 57.3;
 
-        % ÏÈÑé¹À¼Æ
+        % å…ˆéªŒä¼°è®¡
         A =  update_A(gx,gy,gz);
         q = A * q; 
-
-        % ¼ÆËãÏÈÑéÎó²îĞ­·½²î
+        q = q / norm(q);
+        
+        % è®¡ç®—å…ˆéªŒè¯¯å·®åæ–¹å·®
         AT = transpose(A);
         P = A*P*AT + Q;
 
-        % ¸üĞÂ¹Û²âÏòÁ¿
+        % æ›´æ–°è§‚æµ‹å‘é‡
         Z = transpose([ax,ay,az]);
 
-        % ¸üĞÂ¹Û²â¾ØÕó
+        % æ›´æ–°è§‚æµ‹çŸ©é˜µ
         H = update_H(q);
 
-        % ¼ÆËã¿¨¶ûÂüÔöÒæ
+        % è®¡ç®—å¡å°”æ›¼å¢ç›Š
         HT = transpose(H);
         K = (P*HT) / (H*P*HT+R);
 
-        % ºóÑé¹À¼Æ
+        % åéªŒä¼°è®¡
         q = q + K * (Z - H*q);
-
-        % ¸üĞÂÎó²îĞ­·½²î
+        q = q / norm(q);
+        
+        % æ›´æ–°è¯¯å·®åæ–¹å·®
         P = (eye(4) - K * H) * P;
 
-        % Å·À­½Ç½âËã
+        % æ¬§æ‹‰è§’è§£ç®—
         qt = transpose(q);
         eul = quat2eul(qt);  
         eul_deg(deg_num,:) = rad2deg(eul);
@@ -111,26 +113,26 @@ for j = 1:epoch
 end
 
 line_width = 2;
-figure; % ¼¤»îµÚÈı¸ö×ÓÍ¼  
-plot(1:numRows*epoch, eul_deg(:,3), 'b-','LineWidth', line_width); % »æÖÆ¹ö×ª½Ç£¨roll£©  
-hold on; % ±£³Öµ±Ç°Í¼ĞÎ£¬ÒÔ±ãÌí¼Ó¸ü¶àÇúÏß  
-plot(1:numRows*epoch, eul_acc_deg(:,1), 'r-','LineWidth', line_width); % »æÖÆ¹ö×ª½Ç£¨roll£©  
-legend('ekf', 'acc');  
+figure; % æ¿€æ´»ç¬¬ä¸‰ä¸ªå­å›¾  
+plot(1:numRows*epoch, eul_acc_deg(:,1), 'r-','LineWidth', line_width); % ç»˜åˆ¶æ»šè½¬è§’ï¼ˆrollï¼‰  
+hold on; % ä¿æŒå½“å‰å›¾å½¢ï¼Œä»¥ä¾¿æ·»åŠ æ›´å¤šæ›²çº¿  
+plot(1:numRows*epoch, eul_deg(:,3), 'b-','LineWidth', line_width); % ç»˜åˆ¶æ»šè½¬è§’ï¼ˆrollï¼‰  
+legend('acc', 'ekf');  
 title('Pitch Angle (degrees)');  
 xlabel('Time');  
 ylabel('Angle'); 
 
-figure; % ¼¤»îµÚÈı¸ö×ÓÍ¼  
-plot(1:numRows*epoch, eul_deg(:,2), 'b-','LineWidth', line_width); % »æÖÆ¹ö×ª½Ç£¨roll£©  
-hold on; % ±£³Öµ±Ç°Í¼ĞÎ£¬ÒÔ±ãÌí¼Ó¸ü¶àÇúÏß  
-plot(1:numRows*epoch, eul_acc_deg(:,2), 'r-','LineWidth', line_width); % »æÖÆ¹ö×ª½Ç£¨roll£©  
-legend('ekf', 'acc'); 
+figure; % æ¿€æ´»ç¬¬ä¸‰ä¸ªå­å›¾  
+plot(1:numRows*epoch, eul_acc_deg(:,2), 'r-','LineWidth', line_width); % ç»˜åˆ¶æ»šè½¬è§’ï¼ˆrollï¼‰  
+hold on; % ä¿æŒå½“å‰å›¾å½¢ï¼Œä»¥ä¾¿æ·»åŠ æ›´å¤šæ›²çº¿  
+plot(1:numRows*epoch, eul_deg(:,2), 'b-','LineWidth', line_width); % ç»˜åˆ¶æ»šè½¬è§’ï¼ˆrollï¼‰  
+legend('acc', 'ekf'); 
 title('Roll Angle (degrees)');  
 xlabel('Time');  
 ylabel('Angle'); 
 
 
-% ×´Ì¬×ªÒÆ¾ØÕó¸üĞÂ
+% çŠ¶æ€è½¬ç§»çŸ©é˜µæ›´æ–°
 function A_Update = update_A(gx,gy,gz)
     global Half_T; 
     gx_ = gx * Half_T;
@@ -142,7 +144,7 @@ function A_Update = update_A(gx,gy,gz)
                  gz_  gy_ -gx_    1 ;];
 end
 
-% ²âÁ¿¾ØÕó¸üĞÂ
+% æµ‹é‡çŸ©é˜µæ›´æ–°
 function H_Update = update_H(q)
     q0 = q(1);
     q1 = q(2);
