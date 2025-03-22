@@ -16,7 +16,9 @@ eul_deg = zeros(numRows*epoch,3);
 
 % 加速度计欧拉角
 global eul_acc_deg;
-eul_acc_deg = zeros(numRows*epoch,2);
+global gz_yaw;
+eul_acc_deg = zeros(numRows*epoch,3);
+gz_yaw = 0;
 
 % 更新周期
 global period_T;
@@ -53,7 +55,7 @@ Q = diag(Q_diag);
 
 % 测量噪声协方差矩阵
 global R;
-R_value = 1000000;
+R_value = 10000000;
 R_diag = [R_value R_value R_value];
 R = diag(R_diag);
 
@@ -95,7 +97,7 @@ for j = 1:epoch
         K = (P*HT) / (H*P*HT+R);
 
         % 后验估计
-        q = q + K * (Z - H*q);
+        q = q + K * (Z - update_hx(q));
         q = q / norm(q);
         
         % 更新误差协方差
@@ -106,9 +108,13 @@ for j = 1:epoch
         eul = quat2eul(qt);  
         eul_deg(deg_num,:) = rad2deg(eul);
 
+        gz_yaw = gz_yaw + gz*period_T;
         eul_acc_deg(deg_num,1) = rad2deg(atan2(ay,az));
         eul_acc_deg(deg_num,2) = -rad2deg(atan(ax/sqrt(ay*ay+az*az)));
+        eul_acc_deg(deg_num,3) = gz_yaw;
         deg_num = deg_num + 1;
+        
+        norm(q);
     end
 end
 
@@ -156,5 +162,14 @@ function H_Update = update_H(q)
                  2*q0 -2*q1 -2*q2 2*q3];
 end
 
-
-
+% 观测加速度更新
+function hx_Update = update_hx(q)
+    q0 = q(1);
+    q1 = q(2);
+    q2 = q(3);
+    q3 = q(4);
+    
+    hx_Update = [2*q1*q3-2*q0*q2;
+                 2*q2*q3+2*q0*q1;
+                 1-2*q1^2-2*q2^2];
+end
